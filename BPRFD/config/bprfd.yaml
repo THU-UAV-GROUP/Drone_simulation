@@ -4,3 +4,30 @@ bprfd:
   base_control:
 
     debug_mode: false
+
+  # ros node
+  ros_control:
+
+    raw_topic:        "/kitti/velo/pointcloud"
+    ground_topic:     "/ground_cloud"
+    non_ground_topic: "/non_ground_cloud"
+    invalid_topic:    "/invalid_cloud"
+  
+  # ground detection
+  detection_param:
+
+    relative_sensor_height: 1.77
+
+    initial_seeds_count: 20
+
+    seed_z_thre: 1.2
+
+    ground_extraction_count: 3
+
+    seed_dist_thre: 0.3
+
+    too_high_thre: 4.0
+
+    min_dist: 2.0
+
+    max_dist: 75.0
