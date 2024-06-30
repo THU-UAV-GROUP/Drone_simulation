@@ -1,0 +1,17 @@
+    <package format="2">
+      <name>bprfd</name>
+      <version>0.0.0</version>
+      <description>The BPRFD package</description>
+
+      <maintainer email="yn22@mails.tsinghua.edu.cn">Nan Yang</maintainer>
+      <license>MIT</license>
+
+      <buildtool_depend>catkin</buildtool_depend>
+      <build_depend>roscpp</build_depend>
+      <build_depend>sensor_msgs</build_depend>
+      <build_depend>pcl_ros</build_depend>
+
+      <exec_depend>roscpp</exec_depend>
+      <exec_depend>sensor_msgs</exec_depend>
+      <exec_depend>pcl_ros</exec_depend>
+    </package>

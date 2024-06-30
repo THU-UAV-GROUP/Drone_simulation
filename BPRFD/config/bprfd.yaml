@@ -1,0 +1,6 @@
+bprfd:
+
+  # base config
+  base_control:
+
+    debug_mode: false
