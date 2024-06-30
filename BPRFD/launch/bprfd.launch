@@ -1,0 +1,10 @@
+<launch>
+
+    <arg name="project" default="bprfd"/>
+
+    <!-- Parameters -->
+    <rosparam file="$(find bprfd)/config/bprfd.yaml" command="load"/>
+
+
+    <node name="$(arg project)" pkg="$(arg project)" type="$(arg project)" output="screen"/>
+</launch>
