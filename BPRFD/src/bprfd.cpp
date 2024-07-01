@@ -5,6 +5,8 @@ BPRFD::BPRFD()
     getParams();
 
     allocateMemory();
+
+    activateROSNode();
 }
 
 BPRFD::~BPRFD() {}
@@ -21,25 +23,24 @@ void BPRFD::getParams()
 
     // ros node
     nh.param<std::string>("bprfd/ros_control/raw_topic", raw_topic, "");
-    raw_pcd_subscriber = nh.subscribe(raw_topic, 10, &BPRFD::laserCallback, this); 
     ROS_INFO_STREAM("\033[1;32m -- raw topic node: " << raw_topic << " \033[0m");
     std::cout << std::endl;
 
     nh.param<std::string>("bprfd/ros_control/ground_topic", ground_topic, "");
-    ground_pcd_publisher = nh.advertise<sensor_msgs::PointCloud2>(ground_topic, 10);
     ROS_INFO_STREAM("\033[1;32m -- ground topic node: " << ground_topic << " \033[0m");
     std::cout << std::endl;
 
     nh.param<std::string>("bprfd/ros_control/non_ground_topic", non_ground_topic, "");
-    non_ground_pcd_publisher = nh.advertise<sensor_msgs::PointCloud2>(non_ground_topic, 10);
     ROS_INFO_STREAM("\033[1;32m -- non-ground topic node: " << non_ground_topic << " \033[0m");
     std::cout << std::endl;
 
     nh.param<std::string>("bprfd/ros_control/invalid_topic", invalid_topic, "");
-    invalid_pcd_publisher = nh.advertise<sensor_msgs::PointCloud2>(invalid_topic, 10);
     ROS_INFO_STREAM("\033[1;32m -- invalid topic node: " << invalid_topic << " \033[0m");
     std::cout << std::endl;
     
+    nh.param<std::string>("bprfd/ros_control/frame_id", frame_id, "");
+    ROS_INFO_STREAM("\033[1;32m -- fixed frame id: " << frame_id << " \033[0m");
+    std::cout << std::endl;
 
     // ground detection
     nh.param<float>("bprfd/detection_param/relative_sensor_height", relative_sensor_height, 1.77);
@@ -89,6 +90,9 @@ void BPRFD::getParams()
 
 void BPRFD::allocateMemory()
 {
+    ROS_INFO_STREAM("\033[1;32m Allocating memory begin. \033[0m");
+    std::cout << std::endl;
+
     // reset
     ori_pcd.reset(new pcl::PointCloud<PointType>());
 
@@ -108,24 +112,45 @@ void BPRFD::allocateMemory()
     non_ground_pcd->clear();
 
     invalid_pcd->clear();
+
+    ROS_INFO_STREAM("\033[1;32m Allocating memory done. \033[0m");
+    std::cout << std::endl;
+}
+
+void BPRFD::activateROSNode()
+{
+    raw_pcd_subscriber = nh.subscribe(raw_topic, 10, &BPRFD::laserCallback, this); 
+
+    ground_pcd_publisher = nh.advertise<sensor_msgs::PointCloud2>(ground_topic, 10);
+    non_ground_pcd_publisher = nh.advertise<sensor_msgs::PointCloud2>(non_ground_topic, 10);
+    invalid_pcd_publisher = nh.advertise<sensor_msgs::PointCloud2>(invalid_topic, 10);
 }
 
 void BPRFD::laserCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
 {
-    // preprocess 
+    ROS_INFO_STREAM("\033[1;32m Frame " << frame_cnt << " begin. \033[0m");
+
+    // preprocess: get raw pcd
     preprocess(cloud_msg, raw_pcd);
 
-    // process
+    // process: use raw pcd to detect ground pcd and non-ground pcd
     process(raw_pcd, ground_pcd, non_ground_pcd);
 
-    // postprocess
+    // postprocess: remove failure points in non-ground pcd
     postprocess(raw_pcd, ground_pcd, non_ground_pcd, invalid_pcd);
+
+    ROS_INFO_STREAM("\033[1;32m Frame " << frame_cnt << " finish. \033[0m");
+    std::cout << std::endl;
+    frame_cnt++;
 }
 
 void BPRFD::preprocess(const sensor_msgs::PointCloud2ConstPtr& cloud_msg, pcl::PointCloud<MyPointType>::Ptr raw_pcd)
 {
-    ROS_INFO_STREAM("\033[1;32m Preprocess begin. \033[0m");
-    std::cout << std::endl;
+    if (debug_mode)
+    {
+        ROS_INFO_STREAM("\033[1;32m Preprocess begin. \033[0m");
+        std::cout << std::endl;
+    }
 
     // get raw pcd info
     pcl::fromROSMsg(*cloud_msg, *ori_pcd); 
@@ -144,14 +169,20 @@ void BPRFD::preprocess(const sensor_msgs::PointCloud2ConstPtr& cloud_msg, pcl::P
     // remove the point too low
     detectTooLowPoint(raw_pcd);
 
-    ROS_INFO_STREAM("\033[1;32m Preprocess done. \033[0m");
-    std::cout << std::endl;
+    if (debug_mode)
+    {
+        ROS_INFO_STREAM("\033[1;32m Preprocess done. \033[0m");
+        std::cout << std::endl;
+    }
 }
 
 void BPRFD::process(pcl::PointCloud<MyPointType>::Ptr& input_cloud, pcl::PointCloud<MyPointType>::Ptr& ground_cloud, pcl::PointCloud<MyPointType>::Ptr& non_ground_cloud)
 {
-    ROS_INFO_STREAM("\033[1;32m Process begin. \033[0m");
-    std::cout << std::endl;
+    if (debug_mode)
+    {
+        ROS_INFO_STREAM("\033[1;32m Process begin. \033[0m");
+        std::cout << std::endl;
+    }
 
     // get initial ground seeds
     extractInitialSeeds(input_cloud, ground_cloud);
@@ -159,21 +190,32 @@ void BPRFD::process(pcl::PointCloud<MyPointType>::Ptr& input_cloud, pcl::PointCl
     // get ground points by iteration
     extractGroundPoints(input_cloud, ground_cloud, non_ground_cloud);
 
-    ROS_INFO_STREAM("\033[1;32m Process done. \033[0m");
-    std::cout << std::endl;
+    if (debug_mode)
+    {
+        ROS_INFO_STREAM("\033[1;32m Process done. \033[0m");
+        std::cout << std::endl;
+    }
 }
 
 void BPRFD::postprocess(pcl::PointCloud<MyPointType>::Ptr& input_cloud, pcl::PointCloud<MyPointType>::Ptr& ground_cloud, pcl::PointCloud<MyPointType>::Ptr& non_ground_cloud, pcl::PointCloud<MyPointType>::Ptr& invalid_cloud)
 {
-    ROS_INFO_STREAM("\033[1;32m Postprocess begin. \033[0m");
-    std::cout << std::endl;
+    if (debug_mode)
+    {
+        ROS_INFO_STREAM("\033[1;32m Postprocess begin. \033[0m");
+        std::cout << std::endl;
+    }
 
     detectInvalidPoint(input_cloud);
 
     parseAndPubFinalPCD(input_cloud, ground_cloud, non_ground_cloud, invalid_cloud);
 
-    ROS_INFO_STREAM("\033[1;32m Postprocess done. \033[0m");
-    std::cout << std::endl;
+    freeAllPCD(input_cloud, ground_cloud, non_ground_cloud, invalid_cloud);
+
+    if (debug_mode)
+    {
+        ROS_INFO_STREAM("\033[1;32m Postprocess done. \033[0m");
+        std::cout << std::endl;
+    }
 }
 
 void BPRFD::extractInitialSeeds(const pcl::PointCloud<MyPointType>::Ptr& input_cloud, pcl::PointCloud<MyPointType>::Ptr& seeds_cloud)
@@ -317,7 +359,7 @@ void BPRFD::detectInvalidPoint(pcl::PointCloud<MyPointType>::Ptr& cloud)
         float dist = sqrt(point.x * point.x + point.y * point.y + point.y * point.y);
         if (point.is_ground == 0)
         {
-            if (point.z > too_high_thre || min_dist < dist || dist < max_dist)
+            if (point.z > too_high_thre || dist < min_dist || max_dist < dist)
             {
                 point.is_invalid = 1;
                 cnt++;
@@ -370,11 +412,20 @@ void BPRFD::pubPCD(const ros::Publisher& scan_publisher, const pcl::PointCloud<M
     sensor_msgs::PointCloud2 tempCloud;
     pcl::toROSMsg(*scan, tempCloud);
     tempCloud.header.stamp = ros::Time::now();
-    tempCloud.header.frame_id = "map";
+    tempCloud.header.frame_id = frame_id;
     scan_publisher.publish(tempCloud);
 }
 
+void BPRFD::freeAllPCD(pcl::PointCloud<MyPointType>::Ptr& input_cloud, pcl::PointCloud<MyPointType>::Ptr& ground_cloud, pcl::PointCloud<MyPointType>::Ptr& non_ground_cloud, pcl::PointCloud<MyPointType>::Ptr& invalid_cloud)
+{
+    input_cloud->clear();
+    ground_cloud->clear();
+    non_ground_cloud->clear();
+    invalid_cloud->clear();
+}
+
+
 void BPRFD::run()
 {
-    
+    ros::spin();
 }
