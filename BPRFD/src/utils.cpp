@@ -41,7 +41,7 @@ void transformPointType(const pcl::PointCloud<PointType>::Ptr& old_cloud, pcl::P
 
 void pcd2Matrix(const pcl::PointCloud<MyPointType>::Ptr& cloud, Eigen::MatrixXf& matrix)
 {
-    matrix(cloud->points.size(), 3);
+    matrix.resize(cloud->points.size(), 3);
     int j = 0;
     for (auto& point : cloud->points)
     {

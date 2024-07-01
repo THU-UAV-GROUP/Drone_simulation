@@ -21,9 +21,9 @@
 struct PointXYZIWithFlag : public pcl::PointXYZI
 {
     int     global_id;      
-    int     is_ground;
+    int     is_ground;  // 0 represent non-ground point, 1 represent ground point
     int     too_low;     
-    int     is_invalid;     
+    int     is_invalid; // 0 represent valid point, 1 represent invalid point      
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 } EIGEN_ALIGN16;
 

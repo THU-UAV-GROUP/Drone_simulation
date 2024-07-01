@@ -13,8 +13,6 @@ int main(int argc, char** argv)
     BPRFD BPRFD;
     BPRFD.run();
 
-    ros::spinOnce();
-
     ROS_INFO("\033[1;32m BPRFD Main Done.\033[0m");
 
     return 0;  
