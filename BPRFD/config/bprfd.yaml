@@ -12,6 +12,8 @@ bprfd:
     ground_topic:     "/ground_cloud"
     non_ground_topic: "/non_ground_cloud"
     invalid_topic:    "/invalid_cloud"
+
+    frame_id:         "velo_link"
   
   # ground detection
   detection_param:

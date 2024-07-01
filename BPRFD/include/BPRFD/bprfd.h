@@ -15,6 +15,8 @@ private:
     std::string non_ground_topic;
     std::string invalid_topic;
 
+    std::string frame_id;
+
     ros::Subscriber raw_pcd_subscriber;
     ros::Publisher  ground_pcd_publisher;
     ros::Publisher  non_ground_pcd_publisher;
@@ -56,6 +58,8 @@ private:
     float min_dist;
     float max_dist;
 
+    int frame_cnt = 0;
+
 public:
     BPRFD();
     ~BPRFD();
@@ -63,6 +67,8 @@ public:
     void getParams();
 
     void allocateMemory();
+
+    void activateROSNode();
 
     void run();
 
@@ -87,6 +93,8 @@ public:
     void detectGroundPoints(pcl::PointCloud<MyPointType>::Ptr& input_cloud, pcl::PointCloud<MyPointType>::Ptr& ground_cloud, pcl::PointCloud<MyPointType>::Ptr& non_ground_cloud, Eigen::MatrixXf& normal_vector, float& dist_thre);
 
     void parseAndPubFinalPCD(pcl::PointCloud<MyPointType>::Ptr& input_cloud, pcl::PointCloud<MyPointType>::Ptr& ground_cloud, pcl::PointCloud<MyPointType>::Ptr& non_ground_cloud, pcl::PointCloud<MyPointType>::Ptr& invalid_cloud);
+
+    void freeAllPCD(pcl::PointCloud<MyPointType>::Ptr& input_cloud, pcl::PointCloud<MyPointType>::Ptr& ground_cloud, pcl::PointCloud<MyPointType>::Ptr& non_ground_cloud, pcl::PointCloud<MyPointType>::Ptr& invalid_cloud);
 
     void pubPCD(const ros::Publisher& scan_publisher, const pcl::PointCloud<MyPointType>::Ptr& scan);
 };
